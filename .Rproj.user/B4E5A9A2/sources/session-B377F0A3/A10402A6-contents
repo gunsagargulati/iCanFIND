@@ -1,0 +1,176 @@
+`%notin%` <- Negate(`%in%`)
+##
+setwd("/Users/gunsagargulati/Desktop/AcutaCapital/AADI/draft1/MSKP")
+
+df2 <- read.table("MSKP_df2.txt", sep = "\t", row.names =1, header = T)
+df2 <- df2[,-c(1:5)]
+total_df2 <- read.table("MSKP_total_df2.txt", row.names =1, header = T, sep ="\t")
+
+#can subset by different centers here
+
+total_df2 <- aggregate(total_df2[,-c(1:9)], list(as.character(unlist(total_df2$PrimarySite))), sum)
+colnames(total_df2)[1] <- c("PrimarySite")
+
+index <- unique(gsub("_.*", "", colnames(df2))[-c(1:4)])
+
+for(i in 1:length(index)){
+  if(index[i] %notin% c("TSC1.def", "TSC1.likely", "TSC2.def", "TSC2.likely")){
+    df_a <- df2[,-which(gsub("_.*", "", colnames(df2)) %in%  c("TSC1.def", "TSC1.likely", "TSC2.def", "TSC2.likely"))] 
+    
+    no_tmb <- aggregate(df_a[, which(gsub("_.*", "", colnames(df_a)) %in% index[i])], list(df_a$PrimarySite), sum)
+    tmb <- which(df_a$TumorMutationalBurden < 10)
+    with_tmb <- aggregate(df_a[, which(gsub("_.*", "", colnames(df_a)) %in% index[i])][tmb,], list(df_a$PrimarySite[tmb]), sum)
+    
+    sd <- which(rowSums(df_a[, -c(1:5, which(gsub("_.*", "", colnames(df_a)) %in% index[i]))]) == 0)
+    no_tmb_no_sd <- aggregate(df_a[, which(gsub("_.*", "", colnames(df_a)) %in% index[i])][sd,], list(df_a$PrimarySite[sd]), sum)
+    tmb_no_sd <- aggregate(df_a[, which(gsub("_.*", "", colnames(df_a)) %in% index[i])][intersect(tmb,sd),], list(df_a$PrimarySite[intersect(tmb,sd)]), sum)
+    
+    df_combined <- Reduce(function(...) merge(..., by = 1, all=TRUE), list(no_tmb, with_tmb, no_tmb_no_sd, tmb_no_sd))[,-1]
+    colnames(df_combined) <- paste0(index[i], c("_mut_","_cna_", "_sv_", "_all_"), rep(c("noTMB", "TMB", "noTMB_noSD", "TMB_noSD"), each = 4))
+    
+  } else if (index[i] %in% c("TSC1.def", "TSC2.def")) {
+    df_b <- df2[,-which(gsub("_.*", "", colnames(df2)) %in%  c("TSC1.likely", "TSC2.likely"))] 
+    
+    no_tmb <- aggregate(df_b[, which(gsub("_.*", "", colnames(df_b)) %in% index[i])], list(df_b$PrimarySite), sum)
+    tmb <- which(df_b$TumorMutationalBurden < 10)
+    with_tmb <- aggregate(df_b[, which(gsub("_.*", "", colnames(df_b)) %in% index[i])][tmb,], list(df_b$PrimarySite[tmb]), sum)
+    
+    sd <- which(rowSums(df_b[, -c(1:5, which(gsub("_.*", "", colnames(df_b)) %in% index[i]))]) == 0)
+    no_tmb_no_sd <- aggregate(df_b[, which(gsub("_.*", "", colnames(df_b)) %in% index[i])][sd,], list(df_b$PrimarySite[sd]), sum)
+    tmb_no_sd <- aggregate(df_b[, which(gsub("_.*", "", colnames(df_b)) %in% index[i])][intersect(tmb,sd),], list(df_b$PrimarySite[intersect(tmb,sd)]), sum)
+    
+    df_combined <- Reduce(function(...) merge(..., by = 1, all=TRUE), list(no_tmb, with_tmb, no_tmb_no_sd, tmb_no_sd))[,-1]
+    colnames(df_combined) <- paste0(index[i], c("_mut_","_cna_", "_all_"), rep(c("noTMB", "TMB", "noTMB_noSD", "TMB_noSD"), each = 3))
+    
+  } else if (index[i] %in% c("TSC1.likely")) {
+    df_c <- df2[,-which(gsub("_.*", "", colnames(df2)) %in% c("TSC1.def", "TSC2.likely"))]
+    
+    no_tmb <- aggregate(df_c[, which(gsub("_.*", "", colnames(df_c)) %in% index[i])], list(df_c$PrimarySite), sum)
+    tmb <- which(df_c$TumorMutationalBurden < 10)
+    with_tmb <- aggregate(df_c[, which(gsub("_.*", "", colnames(df_c)) %in% index[i])][tmb,], list(df_c$PrimarySite[tmb]), sum)
+    
+    sd <- which(rowSums(df_c[,-c(1:5, which(gsub("_.*", "", colnames(df_c)) %in% index[i]))]) == 0)
+    no_tmb_no_sd <- aggregate(df_c[, which(gsub("_.*", "", colnames(df_c)) %in% index[i])][sd,], list(df_c$PrimarySite[sd]), sum)
+    tmb_no_sd <- aggregate(df_c[, which(gsub("_.*", "", colnames(df_c)) %in% index[i])][intersect(tmb,sd),], list(df_c$PrimarySite[intersect(tmb,sd)]), sum)
+    
+    df_combined <- Reduce(function(...) merge(..., by = 1, all=TRUE), list(no_tmb, with_tmb, no_tmb_no_sd, tmb_no_sd))[,-1]
+    colnames(df_combined) <- paste0(index[i],c("_all_","_mis_", "_sv_"), rep(c("noTMB", "TMB", "noTMB_noSD", "TMB_noSD"), each = 3))
+    
+  } else if (index[i] %in% c("TSC2.likely")){
+    df_d <- df2[,-which(gsub("_.*", "", colnames(df2)) %in% c("TSC2.def", "TSC1.likely"))]
+    
+    no_tmb <- aggregate(df_d[, which(gsub("_.*", "", colnames(df_d)) %in% index[i])], list(df_d$PrimarySite), sum)
+    tmb <- which(df_d$TumorMutationalBurden < 10)
+    with_tmb <- aggregate(df_d[, which(gsub("_.*", "", colnames(df_d)) %in% index[i])][tmb,], list(df_d$PrimarySite[tmb]), sum)
+    
+    sd <- which(rowSums(df_d[,-c(1:5, which(gsub("_.*", "", colnames(df_d)) %in% index[i]))]) == 0)
+    no_tmb_no_sd <- aggregate(df_d[, which(gsub("_.*", "", colnames(df_d)) %in% index[i])][sd,], list(df_d$PrimarySite[sd]), sum)
+    tmb_no_sd <- aggregate(df_d[, which(gsub("_.*", "", colnames(df_d)) %in% index[i])][intersect(tmb,sd),], list(df_d$PrimarySite[intersect(tmb,sd)]), sum)
+    
+    df_combined <- Reduce(function(...) merge(..., by = 1, all=TRUE), list(no_tmb, with_tmb, no_tmb_no_sd, tmb_no_sd))[,-1]
+    colnames(df_combined) <- paste0(index[i],c("_all_","_mis_", "_sv_"), rep(c("noTMB", "TMB", "noTMB_noSD", "TMB_noSD"), each = 3))
+  }
+  ifelse(i == 1, df2_combined <- df_combined, df2_combined <- cbind.data.frame(df2_combined, df_combined))
+}
+
+
+finaltable <- cbind(PrimarySite = no_tmb$Group.1, 
+                    TumorNum = aggregate(df2$SampleSize, list(df2$PrimarySite), mean)$x, 
+                    df2_combined, total_df2)
+finaltable <- finaltable[order(finaltable$PrimarySite),]
+
+seer <- read.table("SEER_Estimates.txt",check.names = F, sep = "\t", header = T, row.names = 1)
+seer <- seer[order(seer$ONCOTREE),]
+
+ft <- finaltable
+rownames(ft) <- ft$PrimarySite
+ft <- ft[,-1]
+
+#by tumor analysis
+total_perc <- apply(ft[,grep(".total_", colnames(ft))], 2,
+                    function(x) as.numeric(unlist(x))/as.numeric(unlist(ft$TumorNum)))
+total_perc[is.na(total_perc)] <- 0
+rownames(total_perc) <- ft$PrimarySite
+
+def_s_perc <- apply(ft[,grep("_noTMB$", colnames(ft))], 2,
+                    function(x) as.numeric(unlist(x))/as.numeric(unlist(ft$TumorNum)))
+def_s_perc[is.na(def_s_perc)] <- 0
+rownames(def_s_perc) <- ft$PrimarySite
+
+tmb_s_perc <- apply(ft[,grep("_TMB$", colnames(ft))], 2,
+                   function(x) as.numeric(unlist(x))/as.numeric(unlist(ft$TumorNum)))
+tmb_s_perc[is.na(tmb_s_perc)] <- 0
+rownames(tmb_s_perc) <- ft$PrimarySite
+
+ab_s_perc <- apply(ft[,grep("_noTMB_noSD$", colnames(ft))], 2,
+                   function(x) as.numeric(unlist(x))/as.numeric(unlist(ft$TumorNum)))
+ab_s_perc[is.na(ab_s_perc)] <- 0
+rownames(ab_s_perc) <- ft$PrimarySite
+
+tmb_ab_s_perc <- apply(ft[,grep("_TMB_noSD$", colnames(ft))], 2,
+                    function(x) as.numeric(unlist(x))/as.numeric(unlist(ft$TumorNum)))
+tmb_ab_s_perc[is.na(tmb_s_perc)] <- 0
+rownames(tmb_s_perc) <- ft$PrimarySite
+
+b1 <- apply(seer$'2022'*total_perc, 2, sum)
+b1 <- b1[order(names(b1))]
+b2 <- apply(seer$'2022'*def_s_perc, 2, sum)
+b2 <- b2[order(names(b2))]
+b3 <- apply(seer$'2022'*ab_s_perc, 2, sum)
+b3 <- b3[order(names(b3))]
+b4 <- apply(seer$'2022'*tmb_s_perc, 2, sum)
+b4 <- b4[order(names(b4))]
+b5 <- apply(seer$'2022'*tmb_ab_s_perc, 2, sum)
+b5 <- b5[order(names(b5))]
+bf <- rbind.data.frame(as.numeric(b1), as.numeric(b2), as.numeric(b3), as.numeric(b4), as.numeric(b5))
+colnames(bf) <- gsub("\\_n.*", "", names(b3))
+rownames(bf) <- c("Total", "Definite", "ActionableMutations", "TMB", "Action_and_TMB")
+write.table(bf, "MSKP_incidence_2022_bytype.txt", sep = "\t", quote = F)
+write.table(total_perc, "MSKP_total_perc.txt", sep = "\t", quote = F)
+write.table(def_s_perc, "MSKP_def_s_perc.txt", sep = "\t", quote = F)
+write.table(ab_s_perc, "MSKP_ab_s_perc.txt", sep = "\t", quote = F)
+write.table(tmb_s_perc, "MSKP_tmb_s_perc.txt", sep = "\t", quote = F)
+write.table(tmb_ab_s_perc, "MSKP_tmb_ab_s_perc.txt", sep = "\t", quote = F)
+
+
+s1 <- data.frame(seer$'2022'*def_s_perc[,grep("TSC", colnames(def_s_perc))])
+def_s_perc <- data.frame(def_s_perc)
+rownames(def_s_perc) <- rownames(seer)
+
+#Figure 3
+s1_a <- cbind.data.frame(TSC1_definite = def_s_perc$TSC1.def_all_noTMB, TSC1_likely = def_s_perc$TSC1.likely_all_noTMB)
+s1_b <- cbind.data.frame(TSC2_definite = def_s_perc$TSC2.def_all_noTMB, TSC2_likely = def_s_perc$TSC2.likely_all_noTMB)
+rownames(s1_a) <- rownames(s1_b) <- rownames(s1)
+
+s2_a <- c(TSC1_total = sum(apply(s1_a*seer$'2022', 2, sum)), apply(s1_a*seer$'2022', 2, sum))
+s2_b <- c(TSC2_total = sum(apply(s1_b*seer$'2022', 2, sum)), apply(s1_b*seer$'2022', 2, sum))
+s2_c <- apply(rbind.data.frame(as.numeric(unlist(s2_a)), as.numeric(unlist(s2_b))), 2, sum)
+names(s2_c) <- c("TSC1_2_total", "TSC1_2_definite", "TSC1_2_likely")
+
+s1_av <- data.frame(t((apply(s1, 2, sum))))
+
+tsc1_stratified <- c(CNA = s1_av$TSC1.def_cna_noTMB/s1_av$TSC1.def_all_noTMB, 
+                     Truncating = s1_av$TSC1.def_mut_noTMB/s1_av$TSC1.def_all_noTMB,
+                     Missense = s1_av$TSC1.likely_mis_noTMB/s1_av$TSC1.likely_all_noTMB,
+                     Fusions = s1_av$TSC1.likely_sv_noTMB/s1_av$TSC1.likely_all_noTMB)
+
+tsc2_stratified <- c(CNA = s1_av$TSC2.def_cna_noTMB/s1_av$TSC2.def_all_noTMB, 
+                     Truncating = s1_av$TSC2.def_mut_noTMB/s1_av$TSC2.def_all_noTMB,
+                     Missense = s1_av$TSC2.likely_mis_noTMB/s1_av$TSC2.likely_all_noTMB,
+                     Fusions = s1_av$TSC2.likely_sv_noTMB/s1_av$TSC2.likely_all_noTMB)
+
+
+##Heatmap
+h1 <- data.frame(seer$'2022'*def_s_perc[,grep("_all_", colnames(def_s_perc))])
+h1_mskp_perc <- def_s_perc[,grep("_all_", colnames(def_s_perc))]
+h1 <- h1_mskp <- h1[,-grep("likely", colnames(h1))]
+h1 <- h1[order(-apply(h1, 1, sum)), order(-apply(h1, 2, sum))]
+write.table(h1, "MSK_h1.txt", sep = "\t", quote = F)
+
+write.table(s1_a, "MSKP_s1_a_TSC1.txt", sep ="\t", quote = F)
+write.table(s1_b, "MSKP_s1_b_TSC2.txt", sep ="\t", quote = F)
+write.table(s2_a, "MSKP_s2_a_TSC1.txt", sep = "\t", quote =F)
+write.table(s2_b, "MSKP_s2_b_TSC2.txt", sep = "\t", quote = F)
+write.table(s2_c, "MSKP_s2_c_TSC1_2.txt", sep = "\t", quote = F)
+write.table(tsc1_stratified, "MSKP_tsc1_stratified.txt", sep = "\t", quote = F)
+write.table(tsc2_stratified, "MSKP_tsc2_stratified.txt", sep = "\t", quote = F)

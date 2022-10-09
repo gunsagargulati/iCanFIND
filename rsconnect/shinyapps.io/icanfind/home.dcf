@@ -1,0 +1,11 @@
+name: home
+title:
+username:
+account: icanfind
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7252947
+bundleId: 6383582
+url: https://icanfind.shinyapps.io/home/
+when: 1665277600.36001
+lastSyncTime: 1665277600.36006
