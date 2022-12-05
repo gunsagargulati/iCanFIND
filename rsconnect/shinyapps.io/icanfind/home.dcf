@@ -5,7 +5,7 @@ account: icanfind
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 7252947
-bundleId: 6589336
+bundleId: 6592580
 url: https://icanfind.shinyapps.io/home/
-when: 1670166433.13149
-lastSyncTime: 1670166433.13151
+when: 1670230390.68966
+lastSyncTime: 1670230390.68967

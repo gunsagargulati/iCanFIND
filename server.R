@@ -86,12 +86,9 @@ dfci_mut <- reactive({mut_value(dfci[[1]], gene_select(), mutselect(), aa_select
 dfci_cna <- reactive({cna_value(dfci[[2]], gene_select(), cnaselect())})
 dfci_fusion <- reactive({fusion_value(dfci[[3]], gene_select(), fusionselect())})
 
-mskp_mut <- mut_value(mskp[[1]], "TSC1", "Inactivating")
-
 mskp_mut <- reactive({mut_value(mskp[[1]], gene_select(), mutselect(), aa_select())})
 mskp_cna <- reactive({cna_value(mskp[[2]], gene_select(), cnaselect())})
 mskp_fusion <- reactive({fusion_value(mskp[[3]], gene_select(), fusionselect())})
-
 
 tcga_results <- reactive({aggregate(cbind(tcga_mut(),tcga_cna(), tcga_fusion()), list(tcga[[4]]), mean, na.rm = T)})
 dfci_results <- reactive({aggregate(cbind(dfci_mut(),dfci_cna(), dfci_fusion()), list(dfci[[4]]), mean, na.rm = T)})
@@ -118,13 +115,12 @@ colnames(results_mean)<- c("Mutation", "Copy number", "Fusion")
 seer_df <- cbind.data.frame(tumor = unlist(cancer_select()), 
                             year = unlist(year_select()), 
                             value = as.numeric(unlist(data.frame(seer[which(seer[,2] %in% cancer_select()),which(colnames(seer) %in% year_select())], check.names = F))))
-print(seer_df)
-print(results_mean)
 seer_mean <- results_mean*seer_df$value
 seer_mean <- seer_mean[order(-apply(seer_mean, 1, mean, na.rm = T)),]
 seer_mean <- reshape2::melt(cbind.data.frame(Tumor = rownames(seer_mean), seer_mean))
 results_seer <- cbind.data.frame(Tumor = seer_mean$Tumor, Alteration = seer_mean$variable, 
                             Incidence = seer_mean$value)
+return(results_seer)
 })
 
 palette <- reactive({
@@ -154,28 +150,6 @@ resultsSeerOrder <- reactive({
   seer_mean <- seer_mean2 <- seer_mean[order(-apply(seer_mean, 1, mean, na.rm = T)),]
   return(rownames(seer_mean))
 })
-
-# PLOTS
-
-output$resultsDL <- downloadHandler(
-  filename = function() {
-    paste('iCanFIND_frequency_results.csv')
-  },
-  content = function(path){
-    write.csv(results(), path)
-    
-  }
-)
-
-output$resultsSEERDL <- downloadHandler(
-  filename = function() {
-    paste('iCanFIND_incidence_results.csv')
-  },
-  content = function(path){
-    write.csv(results_seer(), path)
-    
-  }
-)
 
 output$plot_seer1 <- plotly::renderPlotly({
 p =  ggplot2::ggplot(results(), aes(fill=factor(Alteration, levels = rev(c("Mutation", "Copy number", "Fusion"))), 
